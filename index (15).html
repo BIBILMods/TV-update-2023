@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GERADOR DE IA</title>
+<meta name="description" content="Gerador de vídeos com IA: avatares, anúncios e imagens animadas.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎬</text></svg>">
+<style>
+  :root {
+    --bg: #0b0b0d; --panel: #141418; --line: #2a2a31; --text: #f2f2f5;
+    --muted: #8b8b97; --purple: #9333ea; --purple2: #a855f7; --blue: #007FAC;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 13px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  .topo { border-bottom: 1px solid var(--line); padding: 6px 16px; text-align: right; font-size: 11px; }
+  .topo a { color: var(--text); text-decoration: none; }
+  .topo a:hover { text-decoration: underline; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 18px 16px 40px; }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .sub { color: var(--muted); margin-bottom: 14px; }
+  .nota {
+    padding: 8px 0 12px; font-size: 12.5px;
+  }
+  .nota a { color: var(--text); }
+  details.cfg {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    padding: 9px 12px; margin-bottom: 12px;
+  }
+  details.cfg summary { cursor: default; font-size: 12px; list-style: none; display: flex; justify-content: space-between; }
+  details.cfg summary::after { content: "◂"; font-size: 10px; }
+  details.cfg[open] summary::after { content: "▾"; }
+  details.cfg .corpo { padding-top: 10px; color: var(--muted); font-size: 12px; }
+
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 10px; overflow-x: auto; }
+  .tab {
+    background: none; border: 0; color: var(--muted); cursor: default;
+    padding: 8px 10px; font-size: 12px; white-space: nowrap; border-bottom: 2px solid transparent;
+  }
+  .tab.ativa { color: var(--text); border-bottom-color: var(--purple2); }
+  #descricao { font-size: 12.5px; margin-bottom: 10px; font-weight: 600; }
+
+  .grade { display: grid; grid-template-columns: 1.15fr 1fr; gap: 12px; align-items: start; }
+  @media (max-width: 800px) { .grade { grid-template-columns: 1fr; } }
+  .col { display: flex; flex-direction: column; gap: 12px; }
+
+  .caixa { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .caixa label.t { display: block; font-weight: 700; font-size: 12px; margin-bottom: 6px; }
+  textarea, input[type=text], select {
+    width: 100%; background: #0f0f12; color: var(--text); border: 1px solid var(--line);
+    border-radius: 6px; padding: 9px 10px; font: inherit; resize: vertical;
+  }
+  textarea { min-height: 62px; }
+  textarea:focus, input:focus, select:focus { outline: 1px solid var(--purple2); }
+
+  .exemplos { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+  .exemplos small { color: var(--muted); font-size: 11px; }
+  .chip {
+    background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 5px;
+    padding: 6px 8px; font-size: 11.5px; cursor: pointer; text-align: left; max-width: 100%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .chip:hover { border-color: var(--purple2); }
+
+  .upload {
+    border: 1px dashed #3a3a44; border-radius: 8px; background: var(--panel);
+    padding: 26px 12px; text-align: center; cursor: default; position: relative;
+  }
+  .upload.sobre { border-color: var(--purple2); }
+  .upload b { display: block; margin: 4px 0; font-weight: 600; font-size: 13px; }
+  .upload .ou { color: var(--muted); }
+  .upload .rot { position: absolute; top: -9px; left: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; font-size: 10.5px; color: var(--muted); }
+  .upload img { max-width: 100%; max-height: 180px; border-radius: 6px; display: none; margin: 0 auto; }
+  .upload input { display: none; }
+
+  .gerar {
+    background: linear-gradient(90deg, var(--purple), var(--purple2)); color: #fff; border: 0;
+    border-radius: 6px; padding: 12px; font-weight: 700; font-size: 13.5px; cursor: default; width: 100%;
+  }
+  .gerar:hover { filter: brightness(1.1); }
+  .gap8 { display: flex; flex-direction: column; gap: 8px; }
+
+  .saida {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+    min-height: 160px; position: relative; display: flex; align-items: center; justify-content: center;
+    color: #55555f; font-size: 26px; text-align: center; padding: 22px 14px;
+  }
+  .saida.alta { min-height: 250px; }
+  .saida .rot { position: absolute; top: 6px; left: 8px; font-size: 10.5px; color: var(--muted); background: #0f0f12; border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; }
+  .saida .msg { font-size: 12.5px; color: var(--muted); max-width: 320px; }
+  .saida .msg a { color: #5cc8f0; }
+  .cfg { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; margin-bottom: 12px; }
+  .cfg .resumo { font-size: 12px; display: flex; justify-content: space-between; }
+  .cfg .resumo::after { content: "◂"; font-size: 10px; }
+  .falso-select { background: #0f0f12; border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; }
+  .falso-input { background: #0f0f12; border: 1px solid var(--line); border-radius: 6px; height: 36px; }
+  .lnk { text-decoration: underline; }
+  .topo .lnk { text-decoration: none; }
+  .upload { pointer-events: auto; cursor: pointer; }
+  .upload img { max-width: 100%; max-height: 180px; border-radius: 6px; display: none; margin: 0 auto; }
+  .upload input { display: none; }
+  .upload.sobre { border-color: var(--purple2); }
+  textarea, input[type=text] { pointer-events: auto; user-select: text; -webkit-user-select: text; cursor: text; }
+  .gerar { pointer-events: auto; cursor: pointer; }
+  .gerar:disabled { opacity: .6; cursor: wait; }
+  #saidaImg img { max-width: 100%; max-height: 520px; border-radius: 6px; display: block; margin: 0 auto; }
+  #saidaImg .msg { font-size: 13px; color: var(--muted); }
+  .vid { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .vid .ico { font-size: 26px; }
+  .vid small { font-size: 11.5px; color: var(--muted); }
+  .btn-site {
+    pointer-events: auto; cursor: pointer; text-decoration: none;
+    background: var(--blue); color: #fff; font-size: 13px; font-weight: 600;
+    padding: 10px 16px; border-radius: 8px;
+  }
+  .btn-site:hover { filter: brightness(1.12); }
+  .tab, .chip, .cfg .resumo, .select-prop { cursor: pointer; }
+  .cfg .resumo { cursor: pointer; }
+  .cfg .corpo { display: none; padding-top: 10px; color: var(--muted); font-size: 12px; }
+  .cfg.aberto .corpo { display: block; }
+  .cfg.aberto .resumo::after { content: "▾"; }
+  .topo a, .nota a { color: var(--text); }
+  .nota a { text-decoration: underline; }
+  select { cursor: pointer; }
+  .moldura { overflow: hidden; border-radius: 8px; max-width: 100%; }
+  .moldura img { display: block; max-width: 100%; max-height: 420px; }
+  @keyframes zoom { from { transform: scale(1); } to { transform: scale(1.18) translate(-2%, -2%); } }
+  @keyframes orbita { 0% { transform: scale(1.12) translateX(-4%) rotate(-1deg); } 100% { transform: scale(1.12) translateX(4%) rotate(1deg); } }
+  @keyframes respira { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025); } }
+  @keyframes fala { 0%, 100% { transform: scale(1.02) translateY(0); } 50% { transform: scale(1.05) translateY(-1.5%); } }
+  .anim-zoom { animation: zoom 6s ease-in-out infinite alternate; }
+  .anim-orbita { animation: orbita 5s ease-in-out infinite alternate; }
+  .anim-fala { animation: respira 3s ease-in-out infinite; }
+  .anim-fala.falando { animation: fala .35s ease-in-out infinite; }
+  #animacao { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .btn-falar { background: var(--purple); color: #fff; border: 0; border-radius: 8px; padding: 9px 16px; font-weight: 700; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="topo"><a href="./">Início</a></div>
+<div class="wrap">
+  <h1>🎬 Fluxos de trabalho de vídeo P</h1>
+  <p class="sub">Um único comando → imagem + vídeo. Selecione um fluxo de trabalho, insira um comando e gere o resultado.</p>
+
+  <p class="nota">⚠️ <b>Observação:</b> esta é uma demonstração rápida e não representa um produto integrado. &nbsp;📒 <b>Saiba mais:</b>
+    <a href="https://demo.pruna.ai/p-video-workflows" target="_blank" rel="noopener">Guia de prompts</a> |
+    <a href="https://demo.pruna.ai/p-video-workflows" target="_blank" rel="noopener">Documentação da API</a></p>
+
+  <div class="cfg" id="cfg"><div class="resumo" id="cfgBtn">⚙️ Configurações do modelo</div>
+    <div class="corpo">Modelo de imagem e vídeo definidos automaticamente para cada fluxo de trabalho.</div></div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab" data-i="0">🧑‍🤝‍🧑 Criação de Avatar com IA</button>
+    <button class="tab ativa" data-i="1">📱 Anúncios de IA em Redes Sociais</button>
+    <button class="tab" data-i="2">🛍️ Imagens animadas de produtos</button>
+  </div>
+  <p id="descricao">Anúncios curtos e verticais para Reels, TikTok e Shorts, com visual de produto em destaque.</p>
+
+  <div class="grade">
+    <div class="col">
+      <div class="caixa">
+        <label class="t" for="prompt">Prompt</label>
+        <textarea id="prompt" placeholder="Garrafa de água metálica numa trilha ao nascer do sol, câmera girando devagar, estilo anúncio de redes sociais."></textarea>
+      </div>
+
+      <div class="exemplos">
+        <small>☰ Experimente um exemplo</small>
+        <div class="exemplos" id="exemplos"></div>
+      </div>
+
+      <label class="upload" id="drop">
+        <span class="rot">▣ Ou carregue sua própria imagem (opcional)</span>
+        
+        <div id="dica">
+          <div>⬆</div>
+          <b>Solte a imagem aqui</b>
+          <div class="ou">- ou -</div>
+          <b>Clique para fazer upload</b>
+        </div>
+        <img id="previa" alt="Prévia da imagem enviada">
+        <input type="file" id="arquivo" accept="image/*">
+      </label>
+
+      <div class="caixa">
+        <label class="t" for="prop">Proporção</label>
+        <select id="prop">
+          <option>9:16</option><option>16:9</option><option>1:1</option><option>4:5</option>
+        </select>
+      </div>
+
+      <button class="gerar" id="gerar">Gerar imagem + vídeo</button>
+
+      <div class="caixa gap8">
+        <div>
+          <label class="t" for="pimg">Prompt de imagem</label>
+          <input type="text" id="pimg">
+        </div>
+        <div>
+          <label class="t" for="pvid">Prompt de vídeo</label>
+          <input type="text" id="pvid">
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="saida alta"><span class="rot">▣ Imagem gerada</span><span id="saidaImg">🖼</span></div>
+      <div class="saida alta"><span class="rot">▢ Vídeo gerado</span>
+        <div class="vid">
+          <div id="animacao"><span class="ico">🎥</span></div>
+          <a class="btn-site" id="abrirSite" href="https://demo.pruna.ai/p-video-workflows" target="_blank" rel="noopener">Gerar vídeo no site original ↗</a>
+          <small id="avisoCopia">Seu prompt é copiado pra você colar lá.</small>
+        </div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const drop = document.getElementById("drop");
+  const arq = document.getElementById("arquivo");
+  const previa = document.getElementById("previa");
+  const dica = document.getElementById("dica");
+
+  function carregar(file) {
+    if (!file || !file.type.startsWith("image/")) return;
+    const r = new FileReader();
+    r.onload = () => {
+      previa.src = r.result;
+      previa.style.display = "block";
+      dica.style.display = "none";
+    };
+    r.readAsDataURL(file);
+  }
+
+  arq.addEventListener("change", () => carregar(arq.files[0]));
+  ["dragenter", "dragover"].forEach(e =>
+    drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add("sobre"); }));
+  ["dragleave", "drop"].forEach(e =>
+    drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove("sobre"); }));
+  drop.addEventListener("drop", ev => carregar(ev.dataTransfer.files[0]));
+
+
+  // Abas, exemplos e configurações
+  const FLUXOS = [
+    {
+      desc: "Avatares falantes para anúncios, depoimentos e vídeos explicativos. 1 a 2 pessoas, corpo inteiro, diálogo entre aspas.",
+      ph: "Dois colegas em um escritório moderno. Mulher: “Este produto mudou a forma como trabalhamos.” Homem: “Igualmente. Revolucionário.”",
+      ex: [
+        "Duas colegas em um escritório moderno, depoimento de produto. Mulher: “Este produto mudou tudo.”",
+        "Instrutor de fitness em uma academia, anúncio energético. “Você consegue. Três meses e muda tudo!”",
+        "Duas amigas em um café, anúncio de estilo de vida. Mulher (à esquerda): “Eu tenho que te contar!”",
+        "CEO em sua mesa, lançamento do produto. “Bem-vindos ao nosso novo produto.”",
+        "Estilo de âncora de telejornal, profissional. “Última hora: o mercado fechou em alta.”"
+      ]
+    },
+    {
+      desc: "Anúncios curtos e verticais para Reels, TikTok e Shorts, com visual de produto em destaque.",
+      ph: "Garrafa de água metálica numa trilha ao nascer do sol, câmera girando devagar, estilo anúncio de redes sociais.",
+      ex: [
+        "Tênis de corrida em câmera lenta, gotas de água, fundo neon, anúncio dinâmico.",
+        "Café sendo servido em uma xícara branca, vapor subindo, luz quente da manhã.",
+        "Fone de ouvido flutuando em um fundo colorido, giro suave, estilo comercial."
+      ]
+    },
+    {
+      desc: "Transforme fotos de produtos em imagens animadas, com movimento sutil de câmera e iluminação.",
+      ph: "Perfume sobre uma pedra molhada, reflexos de luz se movendo, câmera aproximando devagar.",
+      ex: [
+        "Relógio de luxo sobre mármore preto, reflexos dourados, zoom suave.",
+        "Pote de creme facial com pétalas caindo em câmera lenta.",
+        "Mochila urbana em uma calçada, vento leve, câmera orbitando o produto."
+      ]
+    }
+  ];
+  let abaAtual = 1;
+  const ESTILOS = [
+    "realistic full-body portrait photo of the person or people described, natural light, ",
+    "vertical social media ad, product in focus, vibrant colors, ",
+    "professional product photography, studio lighting, clean background, "
+  ];
+  const abas = [...document.querySelectorAll(".tab")];
+
+  function mostrarAba(i) {
+    abaAtual = i;
+    const f = FLUXOS[i];
+    abas.forEach((a, k) => a.classList.toggle("ativa", k === i));
+    document.getElementById("descricao").textContent = f.desc;
+    document.getElementById("prompt").placeholder = f.ph;
+    const box = document.getElementById("exemplos");
+    box.innerHTML = "";
+    f.ex.forEach(t => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "chip"; b.textContent = t; b.title = t;
+      b.addEventListener("click", () => { document.getElementById("prompt").value = t; });
+      box.appendChild(b);
+    });
+  }
+  abas.forEach((a, k) => a.addEventListener("click", () => mostrarAba(k)));
+  mostrarAba(1);   // abre com "Anúncios de IA em Redes Sociais" selecionada
+
+  document.getElementById("cfgBtn").addEventListener("click",
+    () => document.getElementById("cfg").classList.toggle("aberto"));
+
+  // Proporção escolhida → tamanho da imagem
+  const TAMANHOS = { "9:16": [576, 1024], "16:9": [1024, 576], "1:1": [768, 768], "4:5": [640, 800] };
+  function tamanho(escala) {
+    const [w, h] = TAMANHOS[document.getElementById("prop").value] || TAMANHOS["9:16"];
+    return "width=" + Math.round(w * escala) + "&height=" + Math.round(h * escala);
+  }
+
+  // Gerar imagem a partir do texto (Pollinations, sem chave), com novas tentativas
+  const gerar = document.getElementById("gerar");
+  const saida = document.getElementById("saidaImg");
+
+  function msg(t) { saida.innerHTML = '<span class="msg">' + t + "</span>"; }
+  function terminar() { gerar.disabled = false; gerar.textContent = "Gerar imagem + vídeo"; }
+  const esperar = ms => new Promise(r => setTimeout(r, ms));
+
+  // Tenta carregar uma imagem; falha se der erro ou passar do tempo limite
+  function carregarImagem(url, limiteMs) {
+    return new Promise((ok, erro) => {
+      const img = new Image();
+      const t = setTimeout(() => { img.src = ""; erro(new Error("tempo")); }, limiteMs);
+      img.onload = () => { clearTimeout(t); ok(img); };
+      img.onerror = () => { clearTimeout(t); erro(new Error("erro")); };
+      img.alt = "Imagem gerada";
+      img.src = url;
+    });
+  }
+
+  gerar.addEventListener("click", async () => {
+    const texto = (document.getElementById("pimg").value.trim()
+                || document.getElementById("prompt").value.trim());
+    if (!texto) { msg("Digite um prompt para gerar a imagem."); return; }
+
+    const base = "https://image.pollinations.ai/prompt/" + encodeURIComponent(ESTILOS[abaAtual] + texto);
+    const semente = () => Math.floor(Math.random() * 1e9);
+    // Cada tentativa usa uma opção diferente, para contornar servidor ocupado
+    const tentativas = [
+      base + "?" + tamanho(1) + "&model=flux&nologo=true&seed=" + semente(),
+      base + "?" + tamanho(0.85) + "&model=turbo&nologo=true&seed=" + semente(),
+      base + "?" + tamanho(0.85) + "&nologo=true&seed=" + semente()
+    ];
+
+    gerar.disabled = true;
+    gerar.textContent = "Gerando...";
+
+    for (let i = 0; i < tentativas.length; i++) {
+      msg(i === 0 ? "Gerando imagem, aguarde..."
+                  : "Servidor ocupado, tentando de novo (" + (i + 1) + "/" + tentativas.length + ")...");
+      try {
+        const img = await carregarImagem(tentativas[i], 70000);
+        saida.innerHTML = "";
+        saida.appendChild(img);
+        animar(img.src, texto);
+        terminar();
+        return;
+      } catch (e) {
+        if (i < tentativas.length - 1) await esperar(16000);  // limite do serviço: 1 pedido a cada 15 s
+      }
+    }
+    msg("Não foi possível gerar agora. O serviço gratuito está ocupado ou bloqueado. Tente de novo em alguns minutos.");
+    terminar();
+  });
+
+
+  // Animação da imagem no quadro "Vídeo gerado" (avatar: respira e fala; produtos: zoom/órbita)
+  function animar(src, texto) {
+    const alvo = document.getElementById("animacao");
+    const modo = ["fala", "zoom", "orbita"][abaAtual];
+    alvo.innerHTML = "";
+    const moldura = document.createElement("div");
+    moldura.className = "moldura";
+    const im = document.createElement("img");
+    im.className = "anim-" + modo;
+    im.alt = "Animação gerada";
+    im.src = src;
+    moldura.appendChild(im);
+    alvo.appendChild(moldura);
+
+    if (modo === "fala" && "speechSynthesis" in window) {
+      const falas = [...texto.matchAll(/[“"]([^”"]+)[”"]/g)].map(m => m[1]).join(" ");
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "btn-falar"; b.textContent = "▶ Falar";
+      b.addEventListener("click", () => {
+        const u = new SpeechSynthesisUtterance(falas || texto);
+        u.lang = "pt-BR";
+        u.onstart = () => im.classList.add("falando");
+        u.onend = u.onerror = () => im.classList.remove("falando");
+        speechSynthesis.cancel();
+        speechSynthesis.speak(u);
+      });
+      alvo.appendChild(b);
+    }
+  }
+
+  // Vídeo: abre o site original e copia o prompt para colar lá
+  document.getElementById("abrirSite").addEventListener("click", () => {
+    const texto = (document.getElementById("pvid").value.trim()
+                || document.getElementById("prompt").value.trim());
+    const aviso = document.getElementById("avisoCopia");
+    if (!texto) return;
+    try {
+      navigator.clipboard.writeText(texto).then(
+        () => { aviso.textContent = "Prompt copiado! Cole lá no campo Prompt."; },
+        () => {}
+      );
+    } catch (e) {}
+  });
+</script>
+</body>
+</html>
